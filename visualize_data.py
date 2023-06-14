@@ -28,22 +28,29 @@ mean_tfidf = selected_data.groupby('Cluster').mean()
 # Get the top words for each cluster
 n_words = 10  # Number of top words to consider
 top_words_per_cluster = []
+cluster_labels_legend = []  # Store cluster labels for legend
 for cluster in range(k):
     top_words = mean_tfidf.loc[cluster].nlargest(n_words).index.tolist()
     top_words_per_cluster.append(top_words)
-
-# Print the top words for each cluster
-for cluster, words in enumerate(top_words_per_cluster):
-    print(f"Cluster {cluster+1} - Top Words: {', '.join(words)}")
+    cluster_label = f"Cluster {cluster+1}: {', '.join(top_words)}"
+    cluster_labels_legend.append(cluster_label)
 
 # Visualize the clusters with interactive tooltips
 fig, ax = plt.subplots(figsize=(10, 8))
-scatter = ax.scatter(reduced_features[:, 0], reduced_features[:, 1], c=cluster_labels)
+
+# Plot each cluster separately and assign cluster labels as legend labels
+scatter = None
+for cluster in range(k):
+    cluster_data = reduced_features[cluster_labels == cluster]
+    scatter = ax.scatter(cluster_data[:, 0], cluster_data[:, 1], label=cluster_labels_legend[cluster])
 
 # Create tooltips for cluster words
-mplcursors.cursor(scatter).connect("add", lambda sel: sel.annotation.set_text(selected_data['Title'][sel.target.index]))
+if scatter is not None:
+    cursor = mplcursors.cursor(hover=True)
+    cursor.connect("add", lambda sel: sel.annotation.set_text(selected_data['Title'][sel.target.index]))
 
 plt.xlabel('Principal Component 1')
 plt.ylabel('Principal Component 2')
 plt.title('Neurotechnology Papers Clusters')
+plt.legend()
 plt.show()
